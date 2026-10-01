@@ -4,14 +4,15 @@ import logging
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, Security, status
+from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app.config import API_KEY, MODELO, PORT
+from app.config import API_KEY, MODELO, PORT, SECURITY_API_KEY
 from app.database import Base, CandidataDB, SessionLocal, VagaDB, criar_tabelas, engine, get_db
 from app.models import AnaliseBancoTalentosResponse, AnaliseResponse, HealthResponse, VagaTalentoInput
 from app.services import vagas_service
@@ -47,6 +48,18 @@ app = FastAPI(
         "name": "Uso interno",
     },
 )
+
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key == SECURITY_API_KEY:
+        return api_key
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Acesso não autorizado: API Key inválida ou ausente."
+    )
+
 
 
 @app.on_event("startup")
@@ -114,6 +127,7 @@ def health():
     response_model=AnaliseResponse,
     tags=["Triagem"],
     summary="Analisar currículos contra uma vaga",
+    dependencies=[Depends(verify_api_key)],
     description="""
 Executa a **triagem completa** de um ou mais currículos em PDF.
 
@@ -205,6 +219,7 @@ async def analyze(
     response_model=AnaliseBancoTalentosResponse,
     tags=["Triagem"],
     summary="Analisar um candidato em várias vagas cadastradas",
+    dependencies=[Depends(verify_api_key)],
     description="""
 Analisa um único currículo contra várias vagas do banco de talentos.
 

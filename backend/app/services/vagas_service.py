@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def cadastrar_empresa(db: Session, nome: str, email: str, senha: str) -> EmpresaDB:
     # Mapeando 'nome' para 'razao_social'. 
-    # Adicionado CNPJ falso e usuario_id=10 para não quebrar a Foreign Key do seu banco.
+    # Adicionado CNPJ falso e usuario_id=10 para não quebrar a Foreign Key do banco.
     existente = db.query(EmpresaDB).filter(EmpresaDB.razao_social == nome).first()
     if existente:
         raise ValueError("Empresa já cadastrada.")
@@ -89,10 +89,24 @@ def cadastrar_candidata(db: Session, nome: str, email: str, curriculo_texto: str
         db.refresh(existente)
         return existente
     
+    # Criar um usuário único para esta candidata para não violar o constraint OneToOne no Java
+    import uuid
+    from app.database import UsuarioDB
+    unique_suffix = uuid.uuid4().hex[:8]
+    usuario = UsuarioDB(
+        email=f"candidata_{unique_suffix}@plataformamulher.com.br",
+        tipo="candidata",
+        provider="local",
+        provider_user_id=f"prov_{unique_suffix}"
+    )
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+    
     candidata = CandidataDB(
         nome_completo=nome, 
         biografia=curriculo_texto,
-        usuario_id=1 # ✅ Chave estrangeira obrigatória. Colocado o ID 1 do banco provisoriamente.
+        usuario_id=usuario.id
     )
     db.add(candidata)
     db.commit()

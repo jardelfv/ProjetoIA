@@ -13,6 +13,9 @@ dist/
 node_modules/
 frontend/dist/
 
+#Java
+*.class
+
 # OS
 .DS_Store
 Thumbs.db
@@ -21,3 +24,24 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Bloqueio Definitivo de IDEs e Ferramentas
+**/.vscode/
+**/.project
+
+# Bloqueio de Pastas de Compilação e Binários
+**/Back/api/bin/
+**/*.class
+**/bin/
+
+# Bloqueio de Dockerfiles e Configurações de Servidor específicos
+**/Back/api/Dockerfile
+**/Front/Dockerfile
+**/Front/entrypoint.sh
+**/Front/nginx.conf
+
+
+# Bloqueio de Arquivos Compactados/Imagens geradas
+**/*.tar
+**/Back/api/sofia-backend.tar
+**/Front/sofia-front.tar
